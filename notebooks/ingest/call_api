@@ -1,0 +1,53 @@
+import requests
+import time
+from typing import Optional, Dict
+
+def call_api(
+    base_api_url: str,
+    url_path_segments: list,
+    token_handler: object,
+    max_attempt_count: int = 3,
+    seconds_between_attempts: int = 1,
+    activity_logger: object,
+    query_parameters: Optional[Dict[str, str]] = None
+) -> requests.Response:
+    """
+    Call an API endpoint with authentication and retry logic.
+
+    Args:
+        base_api_url (str): The root URL of the API service.
+        url_path_segments (list): Segments to append to the base URL to form the full API endpoint.
+        token_handler (object): Manages retrieval of the authentication token for API calls.
+        max_attempt_count (int): Maximum number of attempts to make in case of API call failures.
+        seconds_between_attempts (int): Seconds to wait between retry attempts.
+        activity_logger (object): Logger used to log the activity of the function.
+        query_parameters (dict, optional): Additional query parameters to be included in the API request.
+
+    Returns:
+        requests.Response: The response from the API server, whether successful or after all retries have failed.
+    """
+    # Log the start of the function
+    activity_logger.info("Starting API call function.")
+
+    # Combine base URL with path segments to create the full URL for the API request
+    full_api_url = f"{base_api_url}/{'/'.join(url_path_segments)}"
+    activity_logger.info(f"Constructed API URL: {full_api_url}")
+
+    # Get the authentication headers from the token management system
+    headers = token_handler.get_headers()
+
+    # Execute the API request, handling failures and retries
+    for attempt in range(1, max_attempt_count + 1):
+        activity_logger.info(f"Attempt {attempt} to call API.")
+        response = requests.get(full_api_url, headers=headers, params=query_parameters)
+        
+        if response.ok:
+            activity_logger.info(f"Successful API response received on attempt {attempt}.")
+            return response
+        else:
+            activity_logger.warning(f"API request failed with status {response.status_code}: {response.reason}. Retrying in {seconds_between_attempts}s...")
+            time.sleep(seconds_between_attempts)
+    
+    # Log a final error if all attempts fail
+    activity_logger.error(f"Failed to receive a successful response after {max_attempt_count} attempts.")
+    return response  # Return the last response, even if unsuccessful

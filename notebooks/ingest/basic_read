@@ -1,0 +1,83 @@
+def read_csv(spark, file_path, infer_schema='true', header='true', delimiter=",", quote='"', escape='"', multiline='false'):
+    """
+    Reads a CSV file into a Spark DataFrame with options to configure the reading.
+    
+    Args:
+        spark (SparkSession): The Spark session object.
+        file_path (str): Path to the CSV file.
+        infer_schema (str): Automatically infers column types. It requires one extra read pass of the data. Default is 'true'.
+        header (str): Uses the first line as names of columns. Default is 'true'.
+        delimiter (str): Sets the single character as a delimiter for each field and value. Default is ','.
+        quote (str): Sets the single character used for escaping quoted values where the separator can be part of the value. Default is '"'.
+        escape (str): Sets the single character used for escaping quotes inside an already quoted value. Default is '"'.
+        multiline (str): Parse records that span multiple lines. Default is 'false'.
+    
+    Returns:
+        DataFrame: A DataFrame containing the data from the CSV file.
+    """
+    return spark.read \
+                .option("inferSchema", infer_schema) \
+                .option("header", header) \
+                .option("delimiter", delimiter) \
+                .option("quote", quote) \
+                .option("escape", escape) \
+                .option("multiline", multiline) \
+                .csv(file_path)
+
+def read_json(spark, file_path, mode='PERMISSIVE', multiLine='false'):
+    """
+    Reads a JSON file into a Spark DataFrame.
+
+    Args:
+        spark (SparkSession): The Spark session object.
+        file_path (str): Path to the JSON file.
+        mode (str): Allows a mode for dealing with corrupt records during parsing. 
+                    'PERMISSIVE' : sets all fields to null when there are corrupted records and places all corrupted records in a string column called _corrupt_record;
+                    'DROPMALFORMED' : drops the row that contains malformed records;
+                    'FAILFAST' : fails immediately upon encountering malformed records.
+                    Default is 'PERMISSIVE'.
+        multiLine (str): Parse one record, which may span multiple lines, per file. Default is 'false'.
+
+    Returns:
+        DataFrame: A DataFrame containing the data from the JSON file.
+    """
+    return spark.read \
+                .option("mode", mode) \
+                .option("multiLine", multiLine) \
+                .json(file_path)
+
+def read_parquet(spark, file_path, merge_schema='false'):
+    """
+    Reads a Parquet file into a Spark DataFrame.
+
+    Args:
+        spark (SparkSession): The Spark session object.
+        file_path (str): Path to the Parquet file.
+        merge_schema (str): When set to 'true', the schema of the Parquet files will be merged in case of inconsistent schemas among files. Default is 'false'.
+
+    Returns:
+        DataFrame: A DataFrame containing the data from the Parquet file.
+    """
+    return spark.read \
+                .option("mergeSchema", merge_schema) \
+                .parquet(file_path)
+
+def read_delta(spark, file_path, version=None, timestamp=None):
+    """
+    Reads from a Delta Lake into a Spark DataFrame.
+
+    Args:
+        spark (SparkSession): The Spark session object.
+        file_path (str): Path to the Delta Lake.
+        version (int): Specific version of the table to load. This is optional.
+        timestamp (str): The timestamp of the table snapshot to load. This is optional.
+
+    Returns:
+        DataFrame: A DataFrame containing the data from the Delta Lake.
+    """
+    df_reader = spark.read.format("delta")
+    if version:
+        df_reader.option("versionAsOf", version)
+    if timestamp:
+        df_reader.option("timestampAsOf", timestamp)
+    return df_reader.load(file_path)

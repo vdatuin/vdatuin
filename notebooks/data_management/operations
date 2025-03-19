@@ -1,0 +1,46 @@
+def view_delta_table_versions(spark, table_path):
+    """
+    View the version history of a Delta table. This includes information about the operation, user, and so on for each version.
+
+    Args:
+        spark (SparkSession): The active Spark session.
+        table_path (str): Path to the Delta table or the table name if registered in the metastore.
+
+    Usage:
+        # View versions for a Delta table by path
+        version_info = view_delta_table_versions(spark, "/mnt/delta/sales")
+        
+        # View versions for a Delta table by registered table name
+        version_info = view_delta_table_versions(spark, "sales")
+
+    Returns:
+        DataFrame: A DataFrame containing the history of the Delta table, including version numbers, timestamps, operation types, and user IDs.
+    """
+    from delta.tables import DeltaTable
+    delta_table = DeltaTable.forPath(spark, table_path)
+    return delta_table.history()
+
+
+def delta_time_travel(spark, table_path, version=None, timestamp=None):
+    """
+    Query an older version of a Delta table using Time Travel.
+
+    Args:
+        spark (SparkSession): The active Spark Session.
+        table_path (str): The path to the Delta table.
+        version (int): The version number of the table to query.
+        timestamp (str): The timestamp of the table snapshot to query (e.g., "2021-03-24").
+
+    Usage:
+        # Query by version
+        df_version = delta_time_travel(spark, "/delta/events", version=5)
+        
+        # Query by timestamp
+        df_timestamp = delta_time_travel(spark, "/delta/events", timestamp="2021-03-24")
+    """
+    if version is not None:
+        return spark.read.format("delta").option("versionAsOf", version).load(table_path)
+    elif timestamp is not None:
+        return spark.read.format("delta").option("timestampAsOf", timestamp).load(table_path)
+    else:
+        raise ValueError("Either version or timestamp must be specified")

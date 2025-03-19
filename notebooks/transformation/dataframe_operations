@@ -1,0 +1,119 @@
+def select_columns(df, *columns):
+    """
+    Select specific columns from a DataFrame.
+
+    Args:
+        df (DataFrame): The DataFrame from which columns are to be selected.
+        *columns (str): Column names to select from the DataFrame.
+
+    Usage:
+        df_selected = select_columns(df, "column1", "column2")
+    """
+    return df.select(*columns)
+
+def select_expressions(df, *expressions):
+    """
+    Select and evaluate expressions on a DataFrame.
+
+    Args:
+        df (DataFrame): The DataFrame on which expressions are to be evaluated.
+        *expressions (str): Expressions to evaluate.
+
+    Usage:
+        df_selected_expr = select_expressions(df, "column1 + column2 as total", "column3 == 'active'")
+    """
+    return df.selectExpr(*expressions)
+
+def drop_columns(df, *columns):
+    """
+    Drop specified columns from a DataFrame.
+
+    Args:
+        df (DataFrame): The DataFrame from which columns will be dropped.
+        *columns (str): Column names to drop.
+
+    Usage:
+        df_dropped = drop_columns(df, "column1", "column2")
+    """
+    return df.drop(*columns)
+
+def update_column(df, column_name, new_column):
+    """
+    Add or update a column in a DataFrame.
+
+    Args:
+        df (DataFrame): The DataFrame to update.
+        column_name (str): The name of the column to be added or updated.
+        new_column (Column): The new Column expression for the given column name.
+
+    Usage:
+        from pyspark.sql.functions import col
+        df_updated = update_column(df, "updatedColumn", col("existingColumn") * 2)
+    """
+    return df.withColumn(column_name, new_column)
+
+def rename_column(df, existing_name, new_name):
+    """
+    Rename a column in a DataFrame.
+
+    Args:
+        df (DataFrame): The DataFrame whose column needs renaming.
+        existing_name (str): The current name of the column.
+        new_name (str): The new name for the column.
+
+    Usage:
+        df_renamed = rename_column(df, "oldName", "newName")
+    """
+    return df.withColumnRenamed(existing_name, new_name)
+
+def filter_data(df, condition):
+    """
+    Filter rows from a DataFrame based on a condition.
+
+    Args:
+        df (DataFrame): The DataFrame to be filtered.
+        condition (str or Column): The condition to filter the rows.
+
+    Usage:
+        df_filtered = filter_data(df, "age > 30")
+    """
+    return df.filter(condition)
+
+def get_distinct_records(df):
+    """
+    Return a new DataFrame containing the distinct rows.
+
+    Args:
+        df (DataFrame): The DataFrame from which to retrieve distinct rows.
+
+    Usage:
+        df_distinct = get_distinct_records(df)
+    """
+    return df.distinct()
+
+def limit_records(df, limit_number):
+    """
+    Limit the number of rows returned from a DataFrame.
+
+    Args:
+        df (DataFrame): The DataFrame to limit.
+        limit_number (int): The maximum number of rows to return.
+
+    Usage:
+        df_limited = limit_records(df, 100)
+    """
+    return df.limit(limit_number)
+
+def sort_dataframe(df, *columns, ascending=True):
+    """
+    Sort a DataFrame by specified column(s).
+
+    Args:
+        df (DataFrame): The DataFrame to sort.
+        *columns (str): Columns by which to sort the DataFrame.
+        ascending (bool): Sort direction (default True for ascending, False for descending).
+
+    Usage:
+        df_sorted = sort_dataframe(df, "column1", ascending=False)
+    """
+    return df.sort(*columns, ascending=ascending)

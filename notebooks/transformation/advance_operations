@@ -1,0 +1,107 @@
+from pyspark.sql.functions import lit
+
+def add_literal_column(df, column_name, value):
+    """
+    Add a new column with a literal value to a DataFrame.
+
+    Args:
+        df (DataFrame): The DataFrame to modify.
+        column_name (str): The name of the new column.
+        value (any): The literal value to assign to each row in the new column.
+
+    Usage:
+        df_with_literal = add_literal_column(df, "status", "active")
+    """
+    return df.withColumn(column_name, lit(value))
+
+def fill_missing_values(df, fill_values):
+    """
+    Fill missing values in DataFrame columns.
+
+    Args:
+        df (DataFrame): The DataFrame to be processed.
+        fill_values (dict or str or int or float): Specifies the value to use for filling missing values. 
+                                                  If a dict is passed, it should specify the column names and values to fill.
+
+    Usage:
+        # To fill all missing values in all columns with the same value
+        df_filled = fill_missing_values(df, 0)
+        # To fill missing values with different values per column
+        df_filled = fill_missing_values(df, {"column1": 0, "column2": "unknown"})
+    """
+    return df.na.fill(fill_values)
+
+def join_dataframes(df1, df2, join_expr, join_type="inner"):
+    """
+    Join two DataFrames based on the specified join expression and join type.
+
+    Args:
+        df1 (DataFrame): The left DataFrame.
+        df2 (DataFrame): The right DataFrame.
+        join_expr (Column or str): The join expression, which could be a column name or a condition.
+        join_type (str): Type of join operation. Options include:
+                         - 'inner': Only the rows that match the join condition are returned.
+                         - 'outer', 'full', 'full_outer': All rows from both DataFrames are returned, with missing values where the join condition does not match.
+                         - 'left_outer', 'left': All rows from the left DataFrame are returned, and the matched rows from the right DataFrame, with nulls where there is no match.
+                         - 'right_outer', 'right': All rows from the right DataFrame are returned, and the matched rows from the left DataFrame, with nulls where there is no match.
+                         - 'left_semi': Only the rows from the left DataFrame for which there is a matching row in the right DataFrame are returned.
+                         - 'left_anti': Only the rows from the left DataFrame for which there is no matching row in the right DataFrame are returned.
+                         - 'cross': Cartesian product of rows from both DataFrames.
+
+    Usage:
+        # Inner Join
+        df_inner_joined = join_dataframes(df1, df2, df1["id"] == df2["user_id"], "inner")
+
+        # Full Outer Join
+        df_full_outer_joined = join_dataframes(df1, df2, df1["id"] == df2["user_id"], "outer")
+
+        # Left Outer Join
+        df_left_outer_joined = join_dataframes(df1, df2, df1["id"] == df2["user_id"], "left_outer")
+
+        # Right Outer Join
+        df_right_outer_joined = join_dataframes(df1, df2, df1["id"] == df2["user_id"], "right_outer")
+
+        # Left Semi Join
+        df_left_semi_joined = join_dataframes(df1, df2, df1["id"] == df2["user_id"], "left_semi")
+
+        # Left Anti Join
+        df_left_anti_joined = join_dataframes(df1, df2, df1["id"] == df2["user_id"], "left_anti")
+
+        # Cross Join
+        df_cross_joined = join_dataframes(df1, df2, "cross")
+    """
+    return df1.join(df2, join_expr, join_type)
+
+def union_dataframes(df1, df2):
+    """
+    Perform a union operation between two DataFrames. This method concatenates rows from the second DataFrame to the first DataFrame.
+    Note: Both DataFrames must have the same number of columns and the columns must have the same data types.
+
+    Args:
+        df1 (DataFrame): The first DataFrame.
+        df2 (DataFrame): The second DataFrame.
+
+    Usage:
+        # Assuming df1 and df2 have the same schema
+        df_combined = union_dataframes(df1, df2)
+    """
+    return df1.union(df2)
+
+def union_by_name_dataframes(df1, df2, allow_missing_columns=False):
+    """
+    Perform a union operation between two DataFrames based on column names, with an option to handle missing columns.
+
+    Args:
+        df1 (DataFrame): The first DataFrame.
+        df2 (DataFrame): The second DataFrame.
+        allow_missing_columns (bool): If True, allows union operation even if one DataFrame has columns that are not present in the other. Missing columns will be filled with nulls.
+
+    Usage:
+        # Useful when dataframes have the same column names but in different order
+        df_combined = union_by_name_dataframes(df1, df2)
+
+        # When dataframes have different columns and missing columns are to be allowed
+        df_combined_allow_missing = union_by_name_dataframes(df1, df2, allow_missing_columns=True)
+    """
+    return df1.unionByName(df2, allowMissingColumns=allow_missing_columns)
+

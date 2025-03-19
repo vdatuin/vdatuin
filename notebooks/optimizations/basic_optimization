@@ -1,0 +1,74 @@
+def cache_dataframe(df):
+    """
+    Cache the DataFrame in memory to speed up repeated queries.
+
+    Args:
+        df (DataFrame): The DataFrame to cache.
+
+    Usage:
+        df_cached = cache_dataframe(df)
+        # Perform multiple actions
+        df_cached.count()
+        df_cached.show()
+    """
+    return df.cache()
+from pyspark.sql.functions import broadcast
+
+def broadcast_join(big_df, small_df, join_expr):
+    """
+    Perform a broadcast join by broadcasting the smaller DataFrame.
+
+    Args:
+        big_df (DataFrame): The larger DataFrame.
+        small_df (DataFrame): The smaller DataFrame to broadcast.
+        join_expr (Column): The join expression.
+
+    Usage:
+        df_joined = broadcast_join(large_df, small_df, large_df["id"] == small_df["user_id"])
+    """
+    return big_df.join(broadcast(small_df), join_expr)
+
+def selective_query(df, condition, *columns):
+    """
+    Apply early filtering and select specific columns to optimize data processing.
+
+    Args:
+        df (DataFrame): The DataFrame to query.
+        condition (Column): Filter condition to apply.
+        *columns (str): Columns to select.
+
+    Usage:
+        optimized_df = selective_query(df, df["age"] > 30, "name", "age")
+    """
+    return df.filter(condition).select(*columns)
+
+def repartition_dataframe(df, num_partitions):
+    """
+    Repartition the DataFrame into the specified number of partitions.
+
+    Args:
+        df (DataFrame): The DataFrame to repartition.
+        num_partitions (int): The number of partitions to use.
+
+    Usage:
+        df_repartitioned = repartition_dataframe(df, 200)
+    """
+    return df.repartition(num_partitions)
+from pyspark.sql.functions import monotonically_increasing_id, expr
+
+def salted_join(df1, df2, join_col, salt_factor=10):
+    """
+    Perform a salted join to manage data skew in large joins.
+
+    Args:
+        df1, df2 (DataFrame): DataFrames to join.
+        join_col (str): The name of the column to join on.
+        salt_factor (int): Factor to increase the distribution of keys.
+
+    Usage:
+        df_joined = salted_join(df1, df2, "user_id", salt_factor=5)
+    """
+    df1 = df1.withColumn("salted_join_key", (monotonically_increasing_id() % salt_factor).cast("int"))
+    df2 = df2.withColumn("salted_join_key", expr(f"FLOOR(rand() * {salt_factor})").cast("int"))
+    return df1.join(df2, [join_col, "salted_join_key"]).drop("salted_join_key")
+

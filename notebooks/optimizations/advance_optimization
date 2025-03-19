@@ -1,0 +1,46 @@
+def optimize_table(spark, table_path, zorder_by=None):
+    """
+    Optimize a Delta table to improve query performance, optionally using Z-Ordering on specified columns.
+
+    Args:
+        spark (SparkSession): The active Spark session.
+        table_path (str): Path to the Delta table to be optimized.
+        zorder_by (list of str, optional): List of columns to Z-Order by.
+
+    Usage:
+        # Optimize table normally
+        optimize_table(spark, "dbfs:/mnt/delta/events")
+        
+        # Optimize table with Z-Ordering
+        optimize_table(spark, "dbfs:/mnt/delta/events", zorder_by=["date", "eventId"])
+    """
+    from delta.tables import DeltaTable
+    delta_table = DeltaTable.forPath(spark, table_path)
+    if zorder_by:
+        delta_table.optimize().zorderBy(*zorder_by).execute()
+    else:
+        delta_table.optimize().execute()
+
+
+def compact_and_vacuum_table(spark, table_path, retention_hours=168):
+    """
+    Compact (optimize) and vacuum a Delta table to improve performance and manage storage efficiently.
+
+    Args:
+        spark (SparkSession): The active Spark session.
+        table_path (str): Path to the Delta table to be compacted and vacuumed.
+        retention_hours (int): Retention period in hours for old data files before they are eligible for cleanup during the vacuum process.
+
+    Usage:
+        # Compact and vacuum a table with a retention period of 48 hours
+        compact_and_vacuum_table(spark, "dbfs:/mnt/delta/events", retention_hours=48)
+    """
+    from delta.tables import DeltaTable
+    delta_table = DeltaTable.forPath(spark, table_path)
+    # Optimize the table to compact files
+    delta_table.optimize().execute()
+    # Disable the retention check to allow vacuuming files older than retention hours
+    spark.conf.set("spark.databricks.delta.retentionDurationCheck.enabled", "false")
+    # Vacuum the table to remove old files
+    delta_table.vacuum(retention_hours)
+

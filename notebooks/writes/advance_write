@@ -1,0 +1,82 @@
+from pyspark.sql import DataFrame
+from delta.tables import DeltaTable
+
+def upsert_into_delta(source_df: DataFrame, delta_table_path: str, match_condition: str, update_mapping: dict, insert_mapping: dict):
+    """
+    Perform an upsert (merge) operation into a Delta Lake table using PySpark.
+
+    Args:
+        source_df (DataFrame): The DataFrame containing new data to be upserted into the Delta table.
+        delta_table_path (str): Path to the Delta table.
+        match_condition (str): Condition used to match records for updates.
+        update_mapping (dict): Dictionary specifying how to update existing records.
+        insert_mapping (dict): Dictionary specifying how to insert new records.
+
+    Example:
+        update_mapping = {"target_col1": "source_col1", "target_col2": "source_col2"}
+        insert_mapping = {"target_col1": "source_col1", "target_col2": "source_col2"}
+
+    Returns:
+        None
+    """
+    delta_table = DeltaTable.forPath(spark, delta_table_path)
+
+    (delta_table.alias("target")
+              .merge(
+                  source_df.alias("source"),
+                  match_condition)
+              .whenMatchedUpdate(set=update_mapping)
+              .whenNotMatchedInsert(values=insert_mapping)
+              .execute())
+
+def delete_from_delta(delta_table_path: str, condition: str):
+    """
+    Delete records from a Delta Lake table based on a condition.
+
+    Args:
+        delta_table_path (str): Path to the Delta table.
+        condition (str): Condition which rows to delete.
+
+    Example:
+        condition = "col1 > 5"
+
+    Returns:
+        None
+    """
+    delta_table = DeltaTable.forPath(spark, delta_table_path)
+    delta_table.delete(condition)
+
+def update_delta(delta_table_path: str, set_conditions: dict, filter_condition: str = None):
+    """
+    Update records in a Delta Lake table.
+
+    Args:
+        delta_table_path (str): Path to the Delta table.
+        set_conditions (dict): Dictionary with columns and the values to which they should be updated.
+        filter_condition (str): Condition to filter the rows that need to be updated. If None, all rows are updated.
+
+    Example:
+        set_conditions = {"col1": "value1", "col2": "value2"}
+        filter_condition = "col3 > 5"
+
+    Returns:
+        None
+    """
+    delta_table = DeltaTable.forPath(spark, delta_table_path)
+    if filter_condition:
+        delta_table.update(condition=filter_condition, set=set_conditions)
+    else:
+        delta_table.updateExpr(set_conditions)
+
+def append_to_delta(df: DataFrame, delta_table_path: str):
+    """
+    Append a DataFrame to a Delta Lake table.
+
+    Args:
+        df (DataFrame): DataFrame to append.
+        delta_table_path (str): Path to the Delta table.
+
+    Returns:
+        None
+    """
+    df.write.format("delta").mode("append").save(delta_table_path)

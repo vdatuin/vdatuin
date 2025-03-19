@@ -1,0 +1,48 @@
+import requests
+
+def call_api_with_token(authentication_url, client_identifier, client_secret_key, grant_type="client_credentials", authorization_scope=None, subscription_key=None):
+    """
+    Obtain an access token from an authentication server and prepare headers for making API calls.
+
+    Parameters:
+    - authentication_url (str): URL to the OAuth 2.0 authentication server endpoint.
+    - client_identifier (str): Registered client ID for OAuth 2.0 authentication.
+    - client_secret_key (str): Secret key associated with the client ID for authentication.
+    - grant_type (str): Type of OAuth 2.0 grant; defaults to "client_credentials".
+    - authorization_scope (str, optional): The scope for which the access rights are requested. Not required if default permissions suffice.
+    - subscription_key (str, optional): Subscription key for accessing specific API services that require it.
+
+    Returns:
+    - dict: Dictionary containing headers needed for authenticated API calls.
+    """
+
+    # Setup data payload for the authentication request
+    authentication_data = {
+        "grant_type": grant_type,
+        "client_id": client_identifier,
+        "client_secret": client_secret_key,
+    }
+
+    # If a specific authorization scope is required, add it to the authentication data
+    if authorization_scope:
+        authentication_data["scope"] = authorization_scope
+    
+    # Send a POST request to the authentication server to obtain an access token
+    token_response = requests.post(authentication_url, data=authentication_data)
+    token_response.raise_for_status()  # Check for HTTP errors and raise an exception if any occur
+    
+    # Extract the access token from the response
+    access_token = token_response.json().get("access_token")
+
+    # Prepare the HTTP headers necessary for the subsequent API calls
+    api_call_headers = {
+        "User-Agent": "PostmanRuntime/7.26.8",  # Identifies the client software making the request
+        "Accept-Encoding": "gzip, deflate, br",  # Acceptable content encodings
+        "Authorization": "Bearer " + access_token  # Authorization header with the access token
+    }
+
+    # If a subscription key is provided, add it to the headers
+    if subscription_key:
+        api_call_headers["Ocp-Apim-Subscription-Key"] = subscription_key
+
+    return api_call_headers

@@ -1,0 +1,67 @@
+def write_csv(df, output_path, mode='overwrite', delimiter=",", header='true'):
+    """
+    Writes a Spark DataFrame to a CSV file.
+
+    Args:
+        df (DataFrame): DataFrame to write.
+        output_path (str): Path where the CSV file will be saved.
+        mode (str): Specifies the behavior when data or table already exists. Options include:
+                    'append': Append contents of this DataFrame to existing data.
+                    'overwrite': Overwrite existing data.
+                    'ignore': Silently ignore this operation if data already exists.
+                    'error' or 'errorifexists': Throw an exception if data already exists.
+        delimiter (str): Sets the single character as a delimiter for each field and value. Default is ','.
+        header (str): Writes the names of columns as the first line. Default is 'true'.
+
+    Returns:
+        None
+    """
+    df.write \
+      .option("delimiter", delimiter) \
+      .option("header", header) \
+      .mode(mode) \
+      .csv(output_path)
+
+def write_parquet(df, output_path, mode='overwrite', partition_by=None):
+    """
+    Writes a Spark DataFrame to a Parquet file.
+
+    Args:
+        df (DataFrame): DataFrame to write.
+        output_path (str): Path where the Parquet file will be saved.
+        mode (str): Specifies the behavior when data or table already exists. Options include:
+                    'append': Append contents of this DataFrame to existing data.
+                    'overwrite': Overwrite existing data.
+                    'ignore': Silently ignore this operation if data already exists.
+                    'error' or 'errorifexists': Throw an exception if data already exists.
+        partition_by (list of str): Names of partitioning columns. This is not set by default.
+
+    Returns:
+        None
+    """
+    writer = df.write.mode(mode)
+    if partition_by:
+        writer = writer.partitionBy(*partition_by)
+    writer.parquet(output_path)
+
+def write_delta(df, output_path, mode='overwrite', partition_by=None):
+    """
+    Writes a Spark DataFrame to a Delta Lake.
+
+    Args:
+        df (DataFrame): DataFrame to write.
+        output_path (str): Path where the Delta files will be saved.
+        mode (str): Specifies the behavior when data or table already exists. Options include:
+                    'append': Append contents of this DataFrame to existing data.
+                    'overwrite': Overwrite existing data.
+                    'ignore': Silently ignore this operation if data already exists.
+                    'error' or 'errorifexists': Throw an exception if data already exists.
+        partition_by (list of str): Names of partitioning columns. This is not set by default.
+
+    Returns:
+        None
+    """
+    writer = df.write.format("delta").mode(mode)
+    if partition_by:
+        writer = writer.partitionBy(*partition_by)
+    writer.save(output_path)
